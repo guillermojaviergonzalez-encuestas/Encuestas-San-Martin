@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Encuesta de Campo - San Martín Septiembre 2026</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS para exportar a Excel directamente (.xlsx) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        /* Estilos personalizados para interfaz móvil tipo App */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        /* Ocultar barra de desplazamiento manteniendo funcionalidad */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Estilo de botones de opción tipo radio */
+        .opt-btn {
+            transition: all 0.15s ease-in-out;
+        }
+        .opt-btn.selected {
+            background-color: #2563eb;
+            color: #ffffff;
+            border-color: #1d4ed8;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.25);
+        }
+
+        /* Animación suave para revelado de bloques condicionales */
+        .conditional-block {
+            transition: all 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col justify-between">
+
+    <!-- HEADER / BARRA SUPERIOR -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
+        <div class="max-w-md mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div class="bg-blue-600 p-2 rounded-lg text-white">
+                    <i class="fa-solid fa-clipboard-list text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-sm leading-tight">San Martín - SEPT 2026</h1>
+                    <p class="text-xs text-slate-400">Cédula de Encuesta de Campo</p>
+                </div>
+            </div>
+            <!-- Contador de Encuestas Guardadas Localmente -->
+            <button onclick="openModal()" class="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-full border border-slate-700 text-xs font-semibold text-blue-400">
+                <i class="fa-solid fa-database"></i>
+                <span id="savedCountBadge" class="bg-blue-600 text-white rounded-full px-1.5 py-0.5 text-[10px] font-bold">0</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- CONTENIDOR PRINCIPAL / FORMULARIO -->
+    <main class="flex-grow max-w-md w-full mx-auto p-4 space-y-6">
+
+        <form id="surveyForm" onsubmit="event.preventDefault();" class="space-y-6">
+
+            <!-- BLOQUE: DATOS DEL ENCUESTADOR Y ENTREVISTADO -->
+            <section class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                <h2 class="text-xs font-bold text-blue-600 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center justify-between">
+                    <span><i class="fa-solid fa-user-gear mr-1"></i> Datos de Control</span>
+                    <span id="displayDate" class="text-slate-400 text-[11px] font-normal"></span>
+                </h2>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre / ID Encuestador</label>
+                    <input type="text" id="encuestador" required placeholder="Ej: Juan Pérez" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Género</label>
+                        <select id="genero" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Seleccionar...</option>
+                            <option value="1. Femenino">1. Femenino</option>
+                            <option value="2. Masculino">2. Masculino</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Edad (Años)</label>
+                        <input type="number" id="edad" min="16" max="110" required placeholder="Ej: 45" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Nivel Socio-Económico</label>
+                        <select id="nse" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Seleccionar...</option>
+                            <option value="1. Medio">1. Medio</option>
+                            <option value="2. Bajo">2. Bajo</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Fracción / Zona</label>
+                        <input type="text" id="fraccion" placeholder="Ej: Fracción 4" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+            </section>
+
+            <!-- P1: GOBIERNO NACIONAL -->
+            <section class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
+                <label class="block font-semibold text-sm text-slate-800">
+                    <span class="text-blue-600 font-bold">P1.</span> ¿Qué opinión tiene del Gobierno Nacional?
+                </label>
+                <div class="grid grid-cols-2 gap-2" id="p1_container">
+                    <!-- Botones de opción rápida creados dinámicamente -->
+                </div>
+            </section>
+
+            <!-- P2: EVALUACIÓN DE DIRIGENTES -->
+            <section class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                <label class="block font-semibold text-sm text-slate-800 border-b border-slate-100 pb-2">
+                    <span class="text-blue-600 font-bold">P2.</span> ¿Qué opinión tiene de los siguientes dirigentes?
+                </label>
+                
+                <div class="space-y-4" id="p2_container">
+                    <!-- Se generan dinámicamente con las 8 opciones por cada dirigente -->
+                </div>
+            </section>
+
+            <!-- P3: PEOR PARA ARGENTINA -->
+            <section class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
+                <label class="block font-semibold text-sm text-slate-800">
+                    <span class="text-blue-600 font-bold">P3.</span> ¿Qué sería peor para la Argentina?
+                </label>
+                <div class="space-y-2" id="p3_container"></div>
+            </section>
+
+            <!-- P4: IDENTIFICACIÓN POLÍTICA (DISPARADOR CONDICIONAL) -->
+            <section class="bg-white p-4 rounded-xl shadow-sm border border-blue-200 ring-2 ring-blue-50 space-y-3">
+                <label class="block font-semibold text-sm text-slate-800">
+                    <span class="text-blue-600 font-bold">P4.</span> ¿Usted se siente más identificado con...?
+                </label>
+                <div class="space-y-2" id="p4_container"></div>
+            </section>
+
+            <!-- RAMA CONDICIONAL PERONISMO: P4B, P4C, P4D -->
+            <div id="block_peronista" class="hidden space-y-6 pl-3 border-l-4 border-blue-500">
+                
+                <section class="bg-blue-50/60 p-4 rounded-xl border border-blue-200 space-y-3">
+                    <span class="inline-block bg-blue-600 text-white text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded">Solo Peronistas</span>
+                    <label class="block font-semibold text-sm text-slate-800">
+                        <span class="text-blue-700 font-bold">P4B.</span> En caso de una PASO, ¿Ud a quién vota?
+                    </label>
+                    <div class="space-y-2" id="p4b_container"></div>
+                </section>
+
+                <section class="bg-blue-50/60 p-4 rounded-xl border border-blue-200 space-y-3">
+                    <span class="inline-block bg-blue-600 text-white text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded">Solo Peronistas</span>
+                    <label class="block font-semibold text-sm text-slate-800">
+                        <span class="text-blue-700 font-bold">P4C.</span> En caso de una PASO, ¿Ud a quién vota?
+                    </label>
+                    <div class="space-y-2" id="p4c_container"></div>
+                </section>
+
+                <section class="bg-blue-50/60 p-4 rounded-xl border border-blue-200 space-y-3">
+                    <span class="inline-block bg-blue-600 text-white text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded">Solo Peronistas</span>
+                    <label class="block font-semibold text-sm text-slate-800">
+                        <span class="text-blue-700 font-bold">P4D.</span> En caso de una PASO, ¿Ud a quién vota?
+                    </label>
+                    <div class="space-y-2" id="p4d_container"></div>
+                </section>
+
+            </div>
+
+            <!-- RAMA CONDICIONAL ANTI-PERONISMO / NINGUNO: P4E, P4F -->
+            <div id="block_antiperonista" class="hidden space-y-6 pl-3 border-l-4 border-amber-500">
+                
+                <section class="bg-amber-50/60 p-4 rounded-xl border border-amber-200 space-y-3">
+                    <span class="inline-block bg-amber-600 text-white text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded">Antiperonista / Ninguno</span>
+                    <label class="block font-semibold text-sm text-slate-800">
+                        <span class="text-amber-700 font-bold">P4E.</span> ¿Por qué razón NO votaría al Peronismo?
+                    </label>
+                    <div class="space-y-2" id="p4e_container"></div>
+                </section>
+
+                <section class="bg-amber-50/60 p-4 rounded-xl border border-amber-200 space-y-3">
+                    <span class="inline-block bg-amber-600 text-white text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded">Antiperonista / Ninguno</span>
+                    <label class="block font-semibold text-sm text-slate-800">
+                        <span class="text-amber-700 font-bold">P4F.</span> ¿Cuál de estas razones lo podrían acercar al Peronismo?
+                    </label>
+                    <div class="space-y-2" id="p4f_container"></div>
+                </section>
+
+            </div>
+
+            <!-- P5: ELECCIONES PRESIDENCIALES -->
+            <section class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
+                <label class="block font-semibold text-sm text-slate-800">
+                    <span class="text-blue-600 font-bold">P5.</span> Si mañana hubiese elecciones presidenciales, ¿a qué fuerza votaría?
+                </label>
+                <div class="space-y-2" id="p5_container"></div>
+            </section>
+
+            <!-- P6: GOBIERNO PROVINCIAL -->
+            <section class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
+                <label class="block font-semibold text-sm text-slate-800">
+                    <span class="text-blue-600 font-bold">P6.</span> ¿Qué opinión tiene del Gobierno provincial de Axel Kicillof?
+                </label>
+                <div class="grid grid-cols-2 gap-2" id="p6_container"></div>
+            </section>
+
+            <!-- P7: BALLOTAGE MILEI (DISPARADOR CONDICIONAL) -->
+            <section class="bg-white p-4 rounded-xl shadow-sm border border-blue-200 ring-2 ring-blue-50 space-y-3">
+                <label class="block font-semibold text-sm text-slate-800">
+                    <span class="text-blue-600 font-bold">P7.</span> ¿Votaría a Javier Milei en un Ballotage (Segunda Vuelta)?
+                </label>
+                <div class="grid grid-cols-2 gap-3" id="p7_container"></div>
+            </section>
+
+            <!-- RAMA CONDICIONAL P7: P7A (SÍ) vs P7B (NO) -->
+            <div id="block_p7a" class="hidden pl-3 border-l-4 border-emerald-500">
+                <section class="bg-emerald-50/60 p-4 rounded-xl border border-emerald-200 space-y-3">
+                    <span class="inline-block bg-emerald-600 text-white text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded">Respondió SÍ en P7</span>
+                    <label class="block font-semibold text-sm text-slate-800">
+                        <span class="text-emerald-700 font-bold">P7A.</span> ¿Por qué razón votaría a Milei? (Solo una)
+                    </label>
+                    <div class="space-y-2" id="p7a_container"></div>
+                </section>
+            </div>
+
+            <div id="block_p7b" class="hidden pl-3 border-l-4 border-rose-500">
+                <section class="bg-rose-50/60 p-4 rounded-xl border border-rose-200 space-y-3">
+                    <span class="inline-block bg-rose-600 text-white text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded">Respondió NO en P7</span>
+                    <label class="block font-semibold text-sm text-slate-800">
+                        <span class="text-rose-700 font-bold">P7B.</span> ¿Por qué razón NO votaría a Milei? (Solo una)
+                    </label>
+                    <div class="space-y-2" id="p7b_container"></div>
+                </section>
+            </div>
+
+            <!-- P8: CHANCES GANARLE A MILEI 2027 -->
+            <section class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
+                <label class="block font-semibold text-sm text-slate-800">
+                    <span class="text-blue-600 font-bold">P8.</span> ¿Quién cree que tiene más chances de ganarle a Javier Milei en el 2027?
+                </label>
+                <div class="space-y-2" id="p8_container"></div>
+            </section>
+
+            <!-- P9, P10, P11: GOBIERNO MUNICIPAL E INTENDENTES SAN MARTÍN -->
+            <section class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-4">
+                <h3 class="font-bold text-xs text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-1">Evaluación Local San Martín</h3>
+
+                <div>
+                    <label class="block font-semibold text-sm text-slate-800 mb-2">
+                        <span class="text-blue-600 font-bold">P9.</span> ¿Qué imagen tiene del Gobierno Municipal?
+                    </label>
+                    <div class="grid grid-cols-2 gap-2" id="p9_container"></div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-sm text-slate-800 mb-2">
+                        <span class="text-blue-600 font-bold">P10.</span> ¿Qué imagen tiene del intendente Fernando Moreira?
+                    </label>
+                    <div class="grid grid-cols-2 gap-2" id="p10_container"></div>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-sm text-slate-800 mb-2">
+                        <span class="text-blue-600 font-bold">P11.</span> ¿Qué imagen tiene de Gabriel Katopodis?
+                    </label>
+                    <div class="grid grid-cols-2 gap-2" id="p11_container"></div>
+                </div>
+            </section>
+
+            <!-- P12: BALLOTAGE 2023 -->
+            <section class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
+                <label class="block font-semibold text-sm text-slate-800">
+                    <span class="text-blue-600 font-bold">P12.</span> ¿Recuerda por quién votó en el Ballotage del año 2023?
+                </label>
+                <div class="space-y-2" id="p12_container"></div>
+            </section>
+
+            <!-- BOTONES DE ACCIÓN FLOTANTES / FINAL DEL FORMULARIO -->
+            <div class="pt-4 pb-8 space-y-3">
+                <button type="button" onclick="submitSurvey()" class="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold py-4 rounded-xl shadow-lg shadow-emerald-600/30 text-base flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
+                    <span>GUARDAR Y COMPLETAR ENCUESTA</span>
+                </button>
+
+                <button type="button" onclick="resetForm()" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center space-x-1">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span>Limpiar campos</span>
+                </button>
+            </div>
+
+        </form>
+
+    </main>
+
+    <!-- MODAL DE GESTIÓN DE DATOS / EXPORTAR A EXCEL -->
+    <div id="dataModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+            
+            <!-- Modal Header -->
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-database text-blue-600"></i>
+                    <h3 class="font-bold text-slate-800 text-sm">Encuestas Guardadas Localmente</h3>
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-4 overflow-y-auto space-y-4 text-xs">
+                <div class="flex justify-between items-center bg-blue-50 p-3 rounded-lg border border-blue-100">
+                    <div>
+                        <p class="font-bold text-blue-900 text-sm" id="modalTotalRecords">0 Registros</p>
+                        <p class="text-blue-700 text-[11px]">Almacenados en la memoria del dispositivo</p>
+                    </div>
+                    <i class="fa-solid fa-file-excel text-2xl text-emerald-600"></i>
+                </div>
+
+                <!-- Lista rápida de encuestas guardadas -->
+                <div class="space-y-2">
+                    <p class="font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Últimos Registros:</p>
+                    <div id="recordsList" class="space-y-1.5 max-h-48 overflow-y-auto no-scrollbar">
+                        <!-- Carga dinámica -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 border-t border-slate-100 bg-slate-50 space-y-2">
+                <button onclick="exportToExcel()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow text-xs flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-file-arrow-down text-base"></i>
+                    <span>DESCARGAR EXCEL (.XLSX)</span>
+                </button>
+
+                <button onclick="clearAllData()" class="w-full bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 font-semibold py-2 rounded-xl text-xs">
+                    Eliminar todos los datos guardados
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- NOTIFICACIÓN DE MENSAJE TEMPORAL (TOAST) -->
+    <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-4 py-2.5 rounded-full text-xs font-semibold shadow-2xl opacity-0 pointer-events-none transition-all duration-300 z-50 flex items-center space-x-2">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastMsg">Mensaje</span>
+    </div>
+
+    <!-- LOGICA EN JAVASCRIPT -->
+    <script>
+        // ESTADO GLOBAL DE LA ENCUESTA
+        const surveyState = {};
+
+        // OPCIONES REUTILIZABLES DE ESCALA (1 a 7/8)
+        const scaleOptions = [
+            { val: "1. MB", label: "1. MB" },
+            { val: "2. B", label: "2. B" },
+            { val: "3. R+", label: "3. R+" },
+            { val: "4. R-", label: "4. R-" },
+            { val: "5. M", label: "5. M" },
+            { val: "6. MM", label: "6. MM" },
+            { val: "7. Ns/Nc", label: "7. Ns/Nc" }
+        ];
+
+        const scaleOptionsWithNLC = [
+            ...scaleOptions.slice(0, 6),
+            { val: "7. NLC", label: "7. NLC" },
+            { val: "8. Ns/Nc", label: "8. Ns/Nc" }
+        ];
+
+        const dirigentes = [
+            "Victoria Villarruel",
+            "Axel Kicillof",
+            "Myriam Bregman",
+            "Javier Milei",
+            "Cristina F. de Kirchner",
+            "Sergio Massa",
+            "Patricia Bullrich"
+        ];
+
+        // INICIALIZACIÓN
+        document.addEventListener("DOMContentLoaded", () => {
+            setCurrentDate();
+            renderFormFields();
+            updateSavedCount();
+        });
+
+        function setCurrentDate() {
+            const date = new Date();
+            document.getElementById('displayDate').textContent = date.toLocaleDateString('es-AR', {
+                day: '2-digit', month: '2-digit', year: 'numeric'
+            });
+        }
+
+        // MONTAJE DINÁMICO DEL FORMULARIO
+        function renderFormFields() {
+            // P1
+            renderOptionButtons('p1_container', 'p1', scaleOptions);
+
+            // P2 Dirigentes
+            const p2Container = document.getElementById('p2_container');
+            dirigentes.forEach((d, idx) => {
+                const key = `p2_${idx + 1}_${d.replace(/[^a-zA-Z]/g, '')}`;
+                const div = document.createElement('div');
+                div.className = "bg-slate-50 p-2.5 rounded-lg border border-slate-200/80 space-y-2";
+                div.innerHTML = `
+                    <p class="text-xs font-bold text-slate-700">${idx + 1}. ${d}</p>
+                    <div id="container_${key}" class="grid grid-cols-4 gap-1.5"></div>
+                `;
+                p2Container.appendChild(div);
+                renderOptionButtons(`container_${key}`, key, scaleOptionsWithNLC, true);
+            });
+
+            // P3
+            renderOptionButtons('p3_container', 'p3', [
+                { val: "1. Que siga gobernando Javier Milei hasta 2031", label: "1. Que siga gobernando Javier Milei" },
+                { val: "2. Que vuelva el Peronismo al poder en 2027", label: "2. Que vuelva el Peronismo al poder" },
+                { val: "99. No sabe/No contesta", label: "99. No sabe/No contesta" }
+            ]);
+
+            // P4 (DISPARADOR CONDICIONAL)
+            renderOptionButtons('p4_container', 'p4', [
+                { val: "1. Peronismo", label: "1. Peronismo" },
+                { val: "2. Anti Peronismo", label: "2. Anti Peronismo" },
+                { val: "3. Ninguno de los 2", label: "3. Ninguno de los 2" }
+            ], false, handleP4Change);
+
+            // P4B, P4C, P4D (PERONISMO)
+            renderOptionButtons('p4b_container', 'p4b', [
+                { val: "1. Axel Kicillof", label: "1. Axel Kicillof" },
+                { val: "2. Cristina Kirchner", label: "2. Cristina Kirchner" }
+            ]);
+
+            renderOptionButtons('p4c_container', 'p4c', [
+                { val: "1. Sergio Massa", label: "1. Sergio Massa" },
+                { val: "2. Axel Kicillof", label: "2. Axel Kicillof" }
+            ]);
+
+            renderOptionButtons('p4d_container', 'p4d', [
+                { val: "1. Axel Kicillof", label: "1. Axel Kicillof" },
+                { val: "2. Sergio Massa con el apoyo de Cristina", label: "2. Sergio Massa con el apoyo de Cristina" }
+            ]);
+
+            // P4E, P4F (ANTI-PERONISMO / NINGUNO)
+            renderOptionButtons('p4e_container', 'p4e', [
+                { val: "1. Porque se robaron todo", label: "1. Porque se robaron todo" },
+                { val: "2. Por la Inflación del Gobierno de Alberto Fernández", label: "2. Por la Inflación de A. Fernández" },
+                { val: "3. Porque financian y bancan planeros", label: "3. Porque financian y bancan planeros" },
+                { val: "4. Porque soy Antiperonista", label: "4. Porque soy Antiperonista" },
+                { val: "5. Porque apoyo al Gobierno de Milei", label: "5. Porque apoyo al Gobierno de Milei" },
+                { val: "99. No sabe / No contesta", label: "99. No sabe / No contesta" }
+            ]);
+
+            renderOptionButtons('p4f_container', 'p4f', [
+                { val: "1. Que dejen de emitir dinero con déficit", label: "1. Que dejen de emitir dinero con déficit" },
+                { val: "2. Que dejen de dar planes sociales indiscriminadamente", label: "2. Que dejen de dar planes sociales" },
+                { val: "3. Que prometan aumentar el poder adquisitivo", label: "3. Que prometan aumentar el poder adquisitivo" },
+                { val: "4. Que se alejen de Cristina y el kirchnerismo", label: "4. Que se alejen de Cristina y el kirchnerismo" },
+                { val: "5. Que ofrezcan plan para ayudar a pagar deudas", label: "5. Que ofrezcan plan para pagar deudas" },
+                { val: "6. Que mantengan el orden en las calles", label: "6. Que mantengan el orden en las calles" },
+                { val: "7. Nada me acercaría al Peronismo", label: "7. Nada me acercaría al Peronismo" },
+                { val: "99. No sabe / No contesta", label: "99. No sabe / No contesta" }
+            ]);
+
+            // P5
+            renderOptionButtons('p5_container', 'p5', [
+                { val: "1. UNIÓN POR LA PATRIA", label: "1. UNIÓN POR LA PATRIA" },
+                { val: "2. LA LIBERTAD AVANZA", label: "2. LA LIBERTAD AVANZA" },
+                { val: "3. PRO", label: "3. PRO" },
+                { val: "4. UCR (RADICALISMO)", label: "4. UCR (RADICALISMO)" },
+                { val: "5. FRENTE DE IZQUIERDA", label: "5. FRENTE DE IZQUIERDA" },
+                { val: "6. Peronismo No K", label: "6. Peronismo No K" },
+                { val: "7. EN BLANCO", label: "7. EN BLANCO" },
+                { val: "8. No iría a votar", label: "8. No iría a votar" },
+                { val: "99. No sabe/ No Contesta", label: "99. No sabe/ No Contesta" }
+            ]);
+
+            // P6
+            renderOptionButtons('p6_container', 'p6', scaleOptions);
+
+            // P7 (DISPARADOR CONDICIONAL)
+            renderOptionButtons('p7_container', 'p7', [
+                { val: "1. Si", label: "1. SÍ" },
+                { val: "2. No", label: "2. NO" }
+            ], false, handleP7Change);
+
+            // P7A (SI)
+            renderOptionButtons('p7a_container', 'p7a', [
+                { val: "1. Controló la Inflación", label: "1. Controló la Inflación" },
+                { val: "2. Terminó con los piquetes", label: "2. Terminó con los piquetes" },
+                { val: "3. Achicó el Estado", label: "3. Achicó el Estado" },
+                { val: "4. Porque lo banco a Milei", label: "4. Porque lo banco a Milei" },
+                { val: "99. No sabe / no contesta", label: "99. No sabe / No contesta" }
+            ]);
+
+            // P7B (NO)
+            renderOptionButtons('p7b_container', 'p7b', [
+                { val: "1. Bajos Salarios", label: "1. Bajos Salarios" },
+                { val: "2. Alto Desempleo y Falta de Trabajo", label: "2. Alto Desempleo / Falta de Trabajo" },
+                { val: "3. Aumento de Precios y Servicios", label: "3. Aumento de Precios y Servicios" },
+                { val: "4. Mal estado de la Educación y la Salud", label: "4. Mal estado de Educación y Salud" },
+                { val: "5. Aumento de la pobreza", label: "5. Aumento de la pobreza" },
+                { val: "6. Corrupción mileísta", label: "6. Corrupción mileísta" },
+                { val: "99. No sabe / no contesta", label: "99. No sabe / No contesta" }
+            ]);
+
+            // P8
+            renderOptionButtons('p8_container', 'p8', [
+                { val: "1. Cristina Kirchner", label: "1. Cristina Kirchner" },
+                { val: "2. Axel Kicillof", label: "2. Axel Kicillof" },
+                { val: "3. Sergio Massa", label: "3. Sergio Massa" },
+                { val: "99. No Sabe / No Contesta", label: "99. No Sabe / No Contesta" }
+            ]);
+
+            // P9, P10, P11
+            renderOptionButtons('p9_container', 'p9', scaleOptionsWithNLC);
+            renderOptionButtons('p10_container', 'p10', scaleOptionsWithNLC);
+            renderOptionButtons('p11_container', 'p11', scaleOptionsWithNLC);
+
+            // P12
+            renderOptionButtons('p12_container', 'p12', [
+                { val: "1. Javier Milei", label: "1. Javier Milei" },
+                { val: "2. Sergio Massa", label: "2. Sergio Massa" },
+                { val: "3. No fui a votar", label: "3. No fui a votar" },
+                { val: "99. No Sabe / No Contesta", label: "99. No Sabe / No Contesta" }
+            ]);
+        }
+
+        // GENERADOR GENÉRICO DE BOTONES DE SELECCIÓN RÁPIDA
+        function renderOptionButtons(containerId, key, options, isCompact = false, callback = null) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = "";
+
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.type = "button";
+                btn.dataset.key = key;
+                btn.dataset.value = opt.val;
+                btn.className = `opt-btn w-full text-left font-medium border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg ${isCompact ? 'py-2 px-1 text-[11px] text-center' : 'py-3 px-3 text-xs'} flex items-center justify-between`;
+                
+                btn.innerHTML = `
+                    <span class="truncate">${opt.label}</span>
+                    ${!isCompact ? '<i class="fa-regular fa-circle text-slate-300 check-icon"></i>' : ''}
+                `;
+
+                btn.onclick = () => {
+                    // Limpiar seleccionados previos del mismo grupo
+                    const siblings = container.querySelectorAll(`[data-key="${key}"]`);
+                    siblings.forEach(s => {
+                        s.classList.remove('selected');
+                        const icon = s.querySelector('.check-icon');
+                        if (icon) {
+                            icon.className = 'fa-regular fa-circle text-slate-300 check-icon';
+                        }
+                    });
+
+                    // Seleccionar actual
+                    btn.classList.add('selected');
+                    const icon = btn.querySelector('.check-icon');
+                    if (icon) {
+                        icon.className = 'fa-solid fa-circle-check text-white check-icon';
+                    }
+
+                    // Guardar respuesta en el estado global
+                    surveyState[key] = opt.val;
+
+                    if (callback) callback(opt.val);
+                };
+
+                container.appendChild(btn);
+            });
+        }
+
+        // LOGICA CONDICIONAL DE P4 (Paso Inteligente)
+        function handleP4Change(value) {
+            const blockPeronista = document.getElementById('block_peronista');
+            const blockAntiperonista = document.getElementById('block_antiperonista');
+
+            if (value.includes("Peronismo") && !value.includes("Anti")) {
+                blockPeronista.classList.remove('hidden');
+                blockAntiperonista.classList.add('hidden');
+
+                // Limpiar valores del otro bloque
+                delete surveyState['p4e'];
+                delete surveyState['p4f'];
+            } else {
+                blockPeronista.classList.add('hidden');
+                blockAntiperonista.classList.remove('hidden');
+
+                // Limpiar valores del otro bloque
+                delete surveyState['p4b'];
+                delete surveyState['p4c'];
+                delete surveyState['p4d'];
+            }
+        }
+
+        // LOGICA CONDICIONAL DE P7 (Ballotage Milei)
+        function handleP7Change(value) {
+            const blockA = document.getElementById('block_p7a');
+            const blockB = document.getElementById('block_p7b');
+
+            if (value.startsWith("1.")) { // SÍ
+                blockA.classList.remove('hidden');
+                blockB.classList.add('hidden');
+                delete surveyState['p7b'];
+            } else { // NO
+                blockA.classList.add('hidden');
+                blockB.classList.remove('hidden');
+                delete surveyState['p7a'];
+            }
+        }
+
+        // GUARDAR ENCUESTA EN LOCALSTORAGE
+        function submitSurvey() {
+            // Validaciones básicas
+            const encuestador = document.getElementById('encuestador').value.trim();
+            const genero = document.getElementById('genero').value;
+            const edad = document.getElementById('edad').value;
+            const nse = document.getElementById('nse').value;
+
+            if (!encuestador || !genero || !edad || !nse) {
+                showToast("Por favor complete los datos de control iniciales", "error");
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+
+            // Armar objeto consolidado con marcas de tiempo e ID
+            const record = {
+                id: 'ENC_' + Date.now(),
+                fecha: new Date().toLocaleDateString('es-AR'),
+                hora: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+                encuestador: encuestador,
+                genero: genero,
+                edad: edad,
+                nse: nse,
+                fraccion: document.getElementById('fraccion').value.trim() || 'N/A',
+                ...surveyState
+            };
+
+            // Recuperar base actual o inicializar
+            const currentData = JSON.parse(localStorage.getItem('encuestas_san_martin_2026') || '[]');
+            currentData.push(record);
+            localStorage.setItem('encuestas_san_martin_2026', JSON.stringify(currentData));
+
+            showToast("¡Encuesta guardada con éxito!", "success");
+            updateSavedCount();
+            resetForm(true); // Mantiene el nombre del encuestador para agilizar
+        }
+
+        // REINICIAR FORMULARIO
+        function resetForm(keepEncuestador = false) {
+            const encuestadorVal = document.getElementById('encuestador').value;
+            document.getElementById('surveyForm').reset();
+            
+            if (keepEncuestador) {
+                document.getElementById('encuestador').value = encuestadorVal;
+            }
+
+            // Limpiar selección visual de botones
+            document.querySelectorAll('.opt-btn').forEach(btn => {
+                btn.classList.remove('selected');
+                const icon = btn.querySelector('.check-icon');
+                if (icon) icon.className = 'fa-regular fa-circle text-slate-300 check-icon';
+            });
+
+            // Ocultar bloques condicionales
+            document.getElementById('block_peronista').classList.add('hidden');
+            document.getElementById('block_antiperonista').classList.add('hidden');
+            document.getElementById('block_p7a').classList.add('hidden');
+            document.getElementById('block_p7b').classList.add('hidden');
+
+            // Vaciar estado
+            Object.keys(surveyState).forEach(key => delete surveyState[key]);
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ACTUALIZAR INSIGNIA DE CONTADOR
+        function updateSavedCount() {
+            const currentData = JSON.parse(localStorage.getItem('encuestas_san_martin_2026') || '[]');
+            document.getElementById('savedCountBadge').textContent = currentData.length;
+            document.getElementById('modalTotalRecords').textContent = `${currentData.length} Registros`;
+        }
+
+        // GESTIÓN DEL MODAL Y EXPORTACIÓN EXCEL
+        function openModal() {
+            updateSavedCount();
+            renderRecordsList();
+            document.getElementById('dataModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('dataModal').classList.add('hidden');
+        }
+
+        function renderRecordsList() {
+            const list = document.getElementById('recordsList');
+            const data = JSON.parse(localStorage.getItem('encuestas_san_martin_2026') || '[]');
+            
+            if (data.length === 0) {
+                list.innerHTML = `<p class="text-slate-400 italic py-2">No hay encuestas registradas aún.</p>`;
+                return;
+            }
+
+            list.innerHTML = data.slice().reverse().map(item => `
+                <div class="p-2 bg-slate-50 border border-slate-200 rounded flex justify-between items-center text-[11px]">
+                    <div>
+                        <span class="font-bold text-slate-700">${item.id}</span> 
+                        <span class="text-slate-400">| ${item.hora} hs</span>
+                        <p class="text-slate-500">${item.genero}, ${item.edad} años (${item.nse})</p>
+                    </div>
+                    <span class="text-blue-600 font-semibold">${item.p4 || 'S/D'}</span>
+                </div>
+            `).join('');
+        }
+
+        // EXPORTAR A EXCEL STRUCTURADO (.XLSX)
+        function exportToExcel() {
+            const data = JSON.parse(localStorage.getItem('encuestas_san_martin_2026') || '[]');
+            
+            if (data.length === 0) {
+                showToast("No hay datos cargados para exportar", "error");
+                return;
+            }
+
+            // Mapeo limpio con encabezados amigables para análisis
+            const formattedData = data.map(item => ({
+                "ID Encuesta": item.id,
+                "Fecha": item.fecha,
+                "Hora": item.hora,
+                "Encuestador": item.encuestador,
+                "Género": item.genero,
+                "Edad": item.edad,
+                "NSE": item.nse,
+                "Fracción": item.fraccion,
+                "P1. Gob Nacional": item.p1 || "",
+                "P2. V. Villarruel": item.p2_1_VictoriaVillarruel || "",
+                "P2. A. Kicillof": item.p2_2_AxelKicillof || "",
+                "P2. M. Bregman": item.p2_3_MyriamBregman || "",
+                "P2. J. Milei": item.p2_4_JavierMilei || "",
+                "P2. C. Kirchner": item.p2_5_CristinaFdeKirchner || "",
+                "P2. S. Massa": item.p2_6_SergioMassa || "",
+                "P2. P. Bullrich": item.p2_7_PatriciaBullrich || "",
+                "P3. Peor para Argentina": item.p3 || "",
+                "P4. Identificación Política": item.p4 || "",
+                "P4B. PASO Peronista (Kicillof/Cristina)": item.p4b || "",
+                "P4C. PASO Peronista (Massa/Kicillof)": item.p4c || "",
+                "P4D. PASO Peronista (Kicillof/Massa-CFK)": item.p4d || "",
+                "P4E. Razón No Vota Peronismo": item.p4e || "",
+                "P4F. Acercaría al Peronismo": item.p4f || "",
+                "P5. Elección Presidencial": item.p5 || "",
+                "P6. Gob Provincial Kicillof": item.p6 || "",
+                "P7. Ballotage Milei": item.p7 || "",
+                "P7A. Razones SÍ Milei": item.p7a || "",
+                "P7B. Razones NO Milei": item.p7b || "",
+                "P8. Ganarle a Milei 2027": item.p8 || "",
+                "P9. Imagen Gob Municipal": item.p9 || "",
+                "P10. Imagen Intendente Moreira": item.p10 || "",
+                "P11. Imagen G. Katopodis": item.p11 || "",
+                "P12. Recuerdo Voto Ballotage 2023": item.p12 || ""
+            }));
+
+            // Crear libro de trabajo con SheetJS
+            const worksheet = XLSX.utils.json_to_sheet(formattedData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Encuestas_San_Martin");
+
+            // Descargar archivo
+            XLSX.writeFile(workbook, `Encuestas_San_Martin_SEPT_2026_${Date.now()}.xlsx`);
+            showToast("Excel generado y descargado", "success");
+        }
+
+        // BORRAR TODO EL ALMACENAMIENTO LOCAL
+        function clearAllData() {
+            if (confirm("¿Está seguro de que desea eliminar TODAS las encuestas guardadas localmente? Esta acción no se puede deshacer.")) {
+                localStorage.removeItem('encuestas_san_martin_2026');
+                updateSavedCount();
+                renderRecordsList();
+                showToast("Datos eliminados correctamente", "info");
+            }
+        }
+
+        // TOAST NOTIFICATION
+        function showToast(message, type = "success") {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.textContent = message;
+
+            if (type === "success") {
+                toastIcon.className = "fa-solid fa-circle-check text-emerald-400";
+            } else if (type === "error") {
+                toastIcon.className = "fa-solid fa-circle-xmark text-rose-400";
+            } else {
+                toastIcon.className = "fa-solid fa-circle-info text-blue-400";
+            }
+
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
